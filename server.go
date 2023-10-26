@@ -57,14 +57,9 @@ func (this *Server) Handler(conn net.Conn) {
 	// fmt.Println("connect success")
 
 	// 用户上线，将用户加入到onlinemap中
-	user := NewUser(conn)
+	user := NewUser(conn, this)
 
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
-
-	// 广播当前用户上线消息
-	this.BroadCast(user, "已上线")
+	user.UserOnline()
 
 	// 接收客户端发送的消息
 	go func() {
@@ -72,7 +67,7 @@ func (this *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 { // 对端断开，或者出问题
-				this.BroadCast(user, "下线")
+				user.UserOffline()
 				return
 			}
 			if err != nil && err != io.EOF {
@@ -82,7 +77,7 @@ func (this *Server) Handler(conn net.Conn) {
 			// 自定义消息广播格式：ip:port:msg
 			msg := string(buf[:n-1]) // windows上多一个换行符
 			// 将得到的消息进行广播
-			this.BroadCast(user, msg)
+			user.SendMsg(msg)
 		}
 	}()
 	// 当前handler阻塞

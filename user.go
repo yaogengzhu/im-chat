@@ -3,21 +3,23 @@ package main
 import "net"
 
 type User struct {
-	Name string
-	Addr string
-	C    chan string
-	conn net.Conn
+	Name   string
+	Addr   string
+	C      chan string
+	conn   net.Conn
+	server *Server
 }
 
 // 创建一个用户的API
-func NewUser(conn net.Conn) *User {
+func NewUser(conn net.Conn, server *Server) *User {
 	userAddr := conn.RemoteAddr().String()
 
 	user := &User{
-		Name: userAddr,
-		Addr: userAddr,
-		C:    make(chan string),
-		conn: conn,
+		Name:   userAddr,
+		Addr:   userAddr,
+		C:      make(chan string),
+		conn:   conn,
+		server: server,
 	}
 
 	// 启动监听当前user channel消息的goroutine
@@ -33,4 +35,31 @@ func (this *User) ListenMessage() {
 
 		this.conn.Write([]byte(msg + "\n"))
 	}
+}
+
+// 用户上线的业务
+func (this *User) UserOnline() {
+	// 将用户加入到onlinemap中
+	this.server.mapLock.Lock()
+	this.server.OnlineMap[this.Name] = this
+	this.server.mapLock.Unlock()
+
+	// 广播当前用户上线消息
+	this.server.BroadCast(this, "已上线")
+}
+
+// 用户下线的业务
+func (this *User) UserOffline() {
+	// 将用户从onlinemap中删除
+	this.server.mapLock.Lock()
+	delete(this.server.OnlineMap, this.Name)
+	this.server.mapLock.Unlock()
+
+	// 广播当前用户下线消息
+	this.server.BroadCast(this, "下线")
+}
+
+// 给当前User对应的客户端发送消息
+func (this *User) SendMsg(msg string) {
+	this.server.BroadCast(this, msg)
 }
