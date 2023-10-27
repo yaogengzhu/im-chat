@@ -77,7 +77,7 @@ func (this *Server) Handler(conn net.Conn) {
 			// 自定义消息广播格式：ip:port:msg
 			msg := string(buf[:n-1]) // windows上多一个换行符
 			// 将得到的消息进行广播
-			user.SendMsg(msg)
+			user.DoMessage(msg)
 		}
 	}()
 	// 当前handler阻塞
