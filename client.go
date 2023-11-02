@@ -66,6 +66,28 @@ func (Client *Client) UpdateName() bool {
 	return true
 }
 
+// 公聊模式
+func (client *Client) PublicChat() {
+	// 提示用户输入消息
+	var chatMsg string
+	fmt.Println(">>>>> 请输入聊天内容，exit退出")
+	fmt.Scanln(&chatMsg)
+	for chatMsg != "exit" {
+		// 发送给服务器
+		if len(chatMsg) != 0 {
+			sendMsg := chatMsg + "\n"
+			_, err := client.conn.Write([]byte(sendMsg))
+			if err != nil {
+				fmt.Println("conn.Write err:", err)
+				break
+			}
+		}
+		chatMsg = ""
+		fmt.Println(">>>>> 请输入聊天内容，exit退出")
+		fmt.Scanln(&chatMsg)
+	}
+}
+
 // 处理server回应的消息，直接显示在标准输出即可
 func (client *Client) DealResponse() {
 	// 一旦client.conn有数据，就直接copy到stdout标准输出上，永久阻塞监听
@@ -78,7 +100,7 @@ func (client *Client) Run() {
 		}
 		switch client.flag {
 		case 1:
-			fmt.Println(">>>>> 公聊模式")
+			client.PublicChat()
 			break
 		case 2:
 			fmt.Println(">>>>> 私聊模式")
