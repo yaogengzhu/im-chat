@@ -88,6 +88,45 @@ func (client *Client) PublicChat() {
 	}
 }
 
+// 查询在线用户
+func (client *Client) SelectUsers() {
+	sendMsg := "who\n"
+	_, err := client.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn.Write err:", err)
+		return
+	}
+}
+
+// 私聊模式
+func (client *Client) PrivateChat() {
+	var remoteName string
+	var chatMsg string
+	client.SelectUsers()
+	fmt.Println(">>>>> 请输入聊天对象用户名，exit退出")
+	fmt.Scanln(&remoteName)
+	for remoteName != "exit" {
+		fmt.Println(">>>>> 请输入聊天内容，exit退出")
+		fmt.Scanln(&chatMsg)
+		for chatMsg != "exit" {
+			// 发送给服务器
+			if len(chatMsg) != 0 {
+				sendMsg := "to|" + remoteName + "|" + chatMsg + "\n"
+				_, err := client.conn.Write([]byte(sendMsg))
+				if err != nil {
+					fmt.Println("conn.Write err:", err)
+					break
+				}
+			}
+			chatMsg = ""
+			fmt.Println(">>>>> 请输入聊天内容，exit退出")
+			fmt.Scanln(&chatMsg)
+		}
+		fmt.Println(">>>>> 请输入聊天对象用户名，exit退出")
+		fmt.Scanln(&remoteName)
+	}
+}
+
 // 处理server回应的消息，直接显示在标准输出即可
 func (client *Client) DealResponse() {
 	// 一旦client.conn有数据，就直接copy到stdout标准输出上，永久阻塞监听
